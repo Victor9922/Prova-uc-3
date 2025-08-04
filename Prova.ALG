@@ -11,11 +11,11 @@ var
     cpfCliente: caractere
     emailCliente: caractere
 
-    compraModelo: vetor[1..100] de caractere
-    compraPreco: vetor[1..100] de real
-    compradorNome: vetor[1..100] de caractere
-    compradorCPF: vetor[1..100] de caractere
+    indiceCompra: vetor[1..100] de inteiro
+    qtdCompra: vetor[1..100] de inteiro
     totalCompras: inteiro
+
+    totalSemDesconto, totalDesconto, valorFinal, somaPrecos: real
 
     anoAtual: inteiro
     opcao: inteiro
@@ -29,22 +29,31 @@ var
     qtdEstoque: inteiro
 inicio
     escreval("\n== Cadastro de Veículo ==")
-    escreva("Modelo: ")
+    escreva("Informe o modelo do carro: ")
     leia(modelo)
 
     repita
-        escreva("Ano de fabricação (1990 a ", anoAtual, "): ")
+        escreva("Informe o ano de fabricação (1990 até ", anoAtual, "): ")
         leia(ano)
+        se (ano < 1990) ou (ano > anoAtual) entao
+            escreval("Ano inválido. Por favor, informe um ano entre 1990 e ", anoAtual, ".")
+        fimse
     ate (ano >= 1990) e (ano <= anoAtual)
 
     repita
-        escreva("Preço (mínimo R$10.000): R$ ")
+        escreva("Informe o preço do carro (mínimo R$10.000): R$ ")
         leia(preco)
+        se preco < 10000 entao
+            escreval("Preço inválido. O valor deve ser igual ou superior a R$10.000.")
+        fimse
     ate preco >= 10000
 
     repita
-        escreva("Quantidade em estoque: ")
+        escreva("Informe a quantidade disponível em estoque: ")
         leia(qtdEstoque)
+        se qtdEstoque < 0 entao
+            escreval("Quantidade inválida. O estoque não pode ser negativo.")
+        fimse
     ate qtdEstoque >= 0
 
     totalCarros <- totalCarros + 1
@@ -61,104 +70,152 @@ var
     tamCPF: inteiro
 inicio
     escreval("\n== Cadastro de Cliente ==")
-    escreva("Nome completo: ")
+    escreva("Informe o nome completo: ")
     leia(nomeCliente)
 
     repita
-        escreva("CPF (11 dígitos): ")
+        escreva("Informe o CPF (somente números, 11 dígitos): ")
         leia(cpfCliente)
         tamCPF <- compr(cpfCliente)
+        se tamCPF <> 11 entao
+            escreval("CPF inválido. Deve conter exatamente 11 dígitos.")
+        fimse
     ate tamCPF = 11
 
     repita
-        escreva("E-mail: ")
+        escreva("Informe o e-mail: ")
         leia(emailCliente)
+        se pos("@", emailCliente) = 0 entao
+            escreval("E-mail inválido. O e-mail deve conter '@'.")
+        fimse
     ate pos("@", emailCliente) > 0
 
     escreval("Cliente cadastrado com sucesso.\n")
 fimprocedimento
 
-procedimento registrarCompra()
+procedimento registerPurchase()
 var
-    modeloBusca: caractere
-    encontrado: booleano
+    continuar: caractere
+    escolhaCarro, quantidade: inteiro
 inicio
-    escreval("\n== Registro de Compra ==")
+    totalCompras <- 0
+    continuar <- "s"
 
-    se totalCarros = 0 entao
-        escreval("Nenhum carro disponível.\n")
-        retorne
-    fimse
+    enquanto continuar = "s" faca
+        escreval("\n== Registro de Compra ==")
+        escreva("Digite o número do carro (1 a ", totalCarros, "): ")
+        leia(escolhaCarro)
 
-    escreva("Modelo desejado: ")
-    leia(modeloBusca)
+        se (escolhaCarro >= 1) e (escolhaCarro <= totalCarros) entao
+            escreva("Quantidade desejada: ")
+            leia(quantidade)
 
-    encontrado <- falso
-    para i de 1 ate totalCarros faca
-        se modeloCarro[i] = modeloBusca entao
-            se estoqueCarro[i] > 0 entao
-                encontrado <- verdadeiro
-                escreval("Modelo: ", modeloCarro[i], " - R$ ", precoCarro[i])
-                estoqueCarro[i] <- estoqueCarro[i] - 1
-
+            se quantidade <= estoqueCarro[escolhaCarro] entao
                 totalCompras <- totalCompras + 1
-                compraModelo[totalCompras] <- modeloCarro[i]
-                compraPreco[totalCompras] <- precoCarro[i]
-                compradorNome[totalCompras] <- nomeCliente
-                compradorCPF[totalCompras] <- cpfCliente
-
-                escreval("Compra registrada com sucesso.\n")
+                indiceCompra[totalCompras] <- escolhaCarro
+                qtdCompra[totalCompras] <- quantidade
+                estoqueCarro[escolhaCarro] <- estoqueCarro[escolhaCarro] - quantidade
+                escreval("Compra registrada com sucesso.")
             senao
-                escreval("Estoque indisponível.\n")
+                escreval("Estoque insuficiente.")
             fimse
-            pare
+        senao
+            escreval("Carro inválido.")
         fimse
-    fimpara
 
-    se nao encontrado entao
-        escreval("Modelo não encontrado.\n")
+        escreva("Deseja comprar outro carro? (s/n): ")
+        leia(continuar)
+    fimenquanto
+fimprocedimento
+
+procedimento sellCar()
+var
+    escolhaCarro, quantidade: inteiro
+inicio
+    escreval("\n== Venda de Carro ==")
+    escreva("Digite o número do carro (1 a ", totalCarros, "): ")
+    leia(escolhaCarro)
+
+    se (escolhaCarro >= 1) e (escolhaCarro <= totalCarros) entao
+        escreva("Quantidade a vender: ")
+        leia(quantidade)
+
+        se quantidade <= estoqueCarro[escolhaCarro] entao
+            estoqueCarro[escolhaCarro] <- estoqueCarro[escolhaCarro] - quantidade
+            escreval("Venda realizada com sucesso.")
+        senao
+            escreval("Estoque insuficiente para realizar a venda.")
+        fimse
+    senao
+        escreval("Carro inválido.")
     fimse
 fimprocedimento
 
-procedimento gerarRelatorio()
+procedimento generateReport()
 var
-    i: inteiro
-    totalVendas: real
+    i, idx: inteiro
+    precoUnitario, subtotal, desconto: real
 inicio
-    escreval("\n== Relatório de Compras ==")
+    totalSemDesconto <- 0
+    totalDesconto <- 0
+    valorFinal <- 0
+    somaPrecos <- 0
 
-    se totalCompras = 0 entao
-        escreval("Nenhuma compra realizada.\n")
-        retorne
-    fimse
+    escreval("\n== Relatório Final ==")
+    escreval("Cliente: ", nomeCliente)
+    escreval("CPF: ", cpfCliente)
+    escreval("Email: ", emailCliente)
+    escreval("\nCarros comprados:")
 
-    totalVendas <- 0
     para i de 1 ate totalCompras faca
-        escreval("Cliente: ", compradorNome[i])
-        escreval("CPF: ", compradorCPF[i])
-        escreval("Modelo: ", compraModelo[i])
-        escreval("Valor: R$ ", compraPreco[i]:2:2)
-        escreval("-----------------------------")
-        totalVendas <- totalVendas + compraPreco[i]
+        idx <- indiceCompra[i]
+        precoUnitario <- precoCarro[idx]
+        subtotal <- precoUnitario * qtdCompra[i]
+        desconto <- 0
+
+        se qtdCompra[i] > 2 entao
+            desconto <- desconto + (subtotal * 0.05)
+        fimse
+
+        se anoCarro[idx] < anoAtual entao
+            desconto <- desconto + (subtotal * 0.10)
+        fimse
+
+        totalSemDesconto <- totalSemDesconto + subtotal
+        totalDesconto <- totalDesconto + desconto
+        somaPrecos <- somaPrecos + subtotal
+
+        escreval("- ", modeloCarro[idx], " | Ano: ", anoCarro[idx], " | Preço: R$ ", precoUnitario, " | Quantidade: ", qtdCompra[i])
     fimpara
 
-    escreval("Total de vendas: ", totalCompras)
-    escreval("Valor total: R$ ", totalVendas:2:2, "\n")
+    valorFinal <- totalSemDesconto - totalDesconto
+
+    escreval("\nResumo Financeiro:")
+    escreval("Total sem desconto: R$ ", totalSemDesconto)
+    escreval("Descontos aplicados: R$ ", totalDesconto)
+    escreval("Valor final a pagar: R$ ", valorFinal)
+
+    se totalCompras > 0 entao
+        escreval("Média de preços dos carros comprados: R$ ", somaPrecos / totalCompras)
+    senao
+        escreval("Nenhum carro foi comprado, portanto não há média de preços.")
+    fimse
 fimprocedimento
 
 inicio
     totalCarros <- 0
-    totalCompras <- 0
     anoAtual <- 2025
 
     repita
         escreval("\n  AFSS - AutoFácil Sales System")
         escreval("1 - Cadastrar Carro")
         escreval("2 - Cadastrar Cliente")
-        escreval("3 - Registrar Compra")
-        escreval("4 - Relatório Final")
-        escreval("5 - Sair")
-        escreva("Opção: ")
+        escreval("3 - Sair do Sistema")
+        escreval("4 - Registrar Compras")
+        escreval("5 - Gerar Relatório Final")
+        escreval("6 - Vender Carro (sem cliente)")
+
+        escreva("Escolha uma opção: ")
         leia(opcao)
 
         escolha opcao
@@ -167,13 +224,15 @@ inicio
             caso 2
                 registerClient()
             caso 3
-                registrarCompra()
+                escreval("\nEncerrando o sistema. Obrigado por utilizar o AFSS.")
             caso 4
-                gerarRelatorio()
+                registerPurchase()
             caso 5
-                escreval("\nSistema encerrado. Obrigado por utilizar o AFSS.")
+                generateReport()
+            caso 6
+                sellCar()
             outrocaso
-                escreval("Opção inválida.\n")
+                escreval("Opção inválida. Por favor, tente novamente.\n")
         fimescolha
-    ate opcao = 5
+    ate opcao = 3
 fimalgoritmo
